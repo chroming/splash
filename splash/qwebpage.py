@@ -2,7 +2,8 @@
 from collections import namedtuple
 
 import sip
-from PyQt5.QtWebKitWidgets import QWebPage, QWebView
+# from PyQt5.QtWebKitWidgets import QWebPage, QWebView
+from PyQt5.QtWebEngineWidgets import QWebEnginePage as QWebPage, QWebEngineView as QWebView
 from PyQt5.QtCore import QByteArray
 from twisted.python import log
 
@@ -58,8 +59,12 @@ class SplashQWebPage(QWebPage):
         self.mainFrame().urlChanged.connect(self.on_url_changed)
         self.mainFrame().titleChanged.connect(self.on_title_changed)
         self.mainFrame().loadFinished.connect(self.on_load_finished)
-        self.mainFrame().initialLayoutCompleted.connect(self.on_layout_completed)
+        # self.mainFrame().initialLayoutCompleted.connect(self.on_layout_completed) # TODO: add signal
         self.har = HarBuilder()
+
+    # webengine don't need mainFrame
+    def mainFrame(self):
+        return self
 
     def reset_har(self):
         self.har.reset()
