@@ -332,18 +332,25 @@ def _check_js_profiles_path(js_profiles_path):
 
 
 def _set_global_render_settings(js_disable_cross_domain_access, private_mode):
-    from PyQt5.QtWebKit import QWebSecurityOrigin, QWebSettings
-
-    if js_disable_cross_domain_access is False:
-        # In order to enable cross domain requests it is necessary to add
-        # the http and https to the local scheme, this way all the urls are
-        # seen as inside the same security origin.
-        for scheme in ['http', 'https']:
-            QWebSecurityOrigin.addLocalScheme(scheme)
+    # from PyQt5.QtWebKit import QWebSecurityOrigin, QWebSettings
+    from PyQt5.QtWebEngineWidgets import QWebEngineSettings as QWebSettings
 
     settings = QWebSettings.globalSettings()
-    settings.setAttribute(QWebSettings.PrivateBrowsingEnabled, private_mode)
-    settings.setAttribute(QWebSettings.LocalStorageEnabled, not private_mode)
+    if js_disable_cross_domain_access is False:
+    # old:
+    # In order to enable cross domain requests it is necessary to add
+    # the http and https to the local scheme, this way all the urls are
+    # seen as inside the same security origin.
+    # for scheme in ['http', 'https']:
+    #     QWebSecurityOrigin.addLocalScheme(scheme)
+
+        settings.setAttribute(QWebSettings.LocalContentCanAccessRemoteUrls, True)
+
+    settings.setAttribute(QWebSettings.AllowRunningInsecureContent, True)
+    settings.setAttribute(QWebSettings.AllowAllUnknownUrlSchemes)  # Only in Qt5.11
+    settings.setAttribute(QWebSettings.LocalContentCanAccessFileUrls, True)
+    # settings.setAttribute(QWebSettings.PrivateBrowsingEnabled, private_mode)
+    # settings.setAttribute(QWebSettings.LocalStorageEnabled, not private_mode)
 
 
 def main(jupyter=False, argv=sys.argv, server_factory=splash_server):
