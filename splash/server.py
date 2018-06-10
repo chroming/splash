@@ -7,7 +7,7 @@ import signal
 import functools
 
 from splash import defaults, __version__
-from splash import xvfb
+from splash import xvfb, pyqt_version
 from splash.qtutils import init_qt_app
 
 
@@ -347,8 +347,10 @@ def _set_global_render_settings(js_disable_cross_domain_access, private_mode):
         settings.setAttribute(QWebSettings.LocalContentCanAccessRemoteUrls, True)
 
     settings.setAttribute(QWebSettings.AllowRunningInsecureContent, True)
-    settings.setAttribute(QWebSettings.AllowAllUnknownUrlSchemes)  # Only in Qt5.11
     settings.setAttribute(QWebSettings.LocalContentCanAccessFileUrls, True)
+
+    if pyqt_version.startswith('5.11'):
+        settings.setAttribute(QWebSettings.AllowAllUnknownUrlSchemes)  # Only in Qt5.11
     # settings.setAttribute(QWebSettings.PrivateBrowsingEnabled, private_mode)
     # settings.setAttribute(QWebSettings.LocalStorageEnabled, not private_mode)
 
