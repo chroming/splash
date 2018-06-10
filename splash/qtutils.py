@@ -12,8 +12,10 @@ from PyQt5.QtCore import (QAbstractEventDispatcher, QDateTime, QObject,
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkProxy
-from PyQt5.QtWebKit import QWebSettings
-from PyQt5.QtWebKitWidgets import QWebFrame
+from PyQt5.QtWebEngineWidgets import QWebEngineSettings as QWebSettings, QWebEnginePage as QWebPage
+QWebFrame = QWebPage
+# from PyQt5.QtWebKit import QWebSettings
+# from PyQt5.QtWebKitWidgets import QWebFrame
 from twisted.python import log
 
 from splash.utils import truncated, to_bytes
@@ -286,12 +288,12 @@ def get_versions():
     """ Return a dictionary with qt/pyqt/webkit/sip versions """
     from sip import SIP_VERSION_STR
     from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
-    from PyQt5.QtWebKit import qWebKitVersion
+    # from PyQt5.QtWebKit import qWebKitVersion
 
     return {
         'qt': QT_VERSION_STR,
         'pyqt': PYQT_VERSION_STR,
-        'webkit': qWebKitVersion(),
+        'webkit': '0',
         'sip': SIP_VERSION_STR
     }
 
