@@ -8,9 +8,11 @@ import traceback
 from PyQt5.QtCore import (QObject, QSize, Qt, QTimer, pyqtSlot, QEvent,
                           QPointF, QPoint, pyqtSignal)
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtNetwork import QNetworkRequest
-from PyQt5.QtWebKitWidgets import QWebPage
-from PyQt5.QtWebKit import QWebSettings
+#from PyQt5.QtNetwork import QNetworkRequest
+#from PyQt5.QtWebKitWidgets import QWebPage
+#from PyQt5.QtWebKit import QWebSettings
+from PyQt5.QtWebEngineWidgets import QWebEngineSettings as QWebSettings, QWebEnginePage as QWebPage
+from PyQt5.QtWebEngineCore import QWebEngineHttpRequest as QNetworkRequest
 from PyQt5.QtWidgets import QApplication
 from twisted.internet import defer
 from twisted.python import log
@@ -117,7 +119,7 @@ class BrowserTab(QObject):
                       render_options):
         """ Create and initialize QWebPage and QWebView """
         self.web_page = SplashQWebPage(verbosity)
-        self.web_page.setNetworkAccessManager(network_manager)
+        # self.web_page.setNetworkAccessManager(network_manager)
         self.web_page.splash_proxy_factory = splash_proxy_factory
         self.web_page.render_options = render_options
 
@@ -174,10 +176,10 @@ class BrowserTab(QObject):
     get_js_enabled = webpage_option_getter(QWebSettings.JavascriptEnabled)
     set_js_enabled = webpage_option_setter(QWebSettings.JavascriptEnabled)
 
-    get_private_mode_enabled = webpage_option_getter(QWebSettings.PrivateBrowsingEnabled)
+    # get_private_mode_enabled = webpage_option_getter(QWebSettings.PrivateBrowsingEnabled)
     def set_private_mode_enabled(self, val):
         settings = self.web_page.settings()
-        settings.setAttribute(QWebSettings.PrivateBrowsingEnabled, bool(val))
+        # settings.setAttribute(QWebSettings.PrivateBrowsingEnabled, bool(val))
         settings.setAttribute(QWebSettings.LocalStorageEnabled, not bool(val))
 
     get_images_enabled = webpage_option_getter(QWebSettings.AutoLoadImages)
@@ -186,8 +188,8 @@ class BrowserTab(QObject):
     get_plugins_enabled = webpage_option_getter(QWebSettings.PluginsEnabled)
     set_plugins_enabled = webpage_option_setter(QWebSettings.PluginsEnabled, bool)
 
-    get_indexeddb_enabled = webpage_option_getter(QWebSettings.OfflineStorageDatabaseEnabled)
-    set_indexeddb_enabled = webpage_option_setter(QWebSettings.OfflineStorageDatabaseEnabled)
+    # get_indexeddb_enabled = webpage_option_getter(QWebSettings.OfflineStorageDatabaseEnabled) # TODO: fix
+    # set_indexeddb_enabled = webpage_option_setter(QWebSettings.OfflineStorageDatabaseEnabled)
 
     get_media_source_enabled = webpage_option_getter(MediaSourceEnabled)
     set_media_source_enabled = webpage_option_setter(MediaSourceEnabled)
@@ -204,11 +206,12 @@ class BrowserTab(QObject):
         settings.setAttribute(QWebSettings.LocalContentCanAccessRemoteUrls, True)
 
         scroll_bars = Qt.ScrollBarAsNeeded if self.visible else Qt.ScrollBarAlwaysOff
-        web_page.mainFrame().setScrollBarPolicy(Qt.Vertical, scroll_bars)
-        web_page.mainFrame().setScrollBarPolicy(Qt.Horizontal, scroll_bars)
+        # web_page.mainFrame().setScrollBarPolicy(Qt.Vertical, scroll_bars) # TODO: fix
+        # web_page.mainFrame().setScrollBarPolicy(Qt.Horizontal, scroll_bars)
 
         if self.visible:
-            settings.setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
+            pass
+            # settings.setAttribute(QWebSettings.DeveloperExtrasEnabled, True) # TODO: fix
 
         self.set_js_enabled(True)
         self.set_plugins_enabled(defaults.PLUGINS_ENABLED)
@@ -219,12 +222,12 @@ class BrowserTab(QObject):
         self.set_media_source_enabled(defaults.MEDIA_SOURCE_ENABLED)
 
     def _setup_webpage_events(self):
-        main_frame = self.web_page.mainFrame()
+        main_frame = self.web_page
         self._load_finished = WrappedSignal(main_frame.loadFinished)
         main_frame.loadFinished.connect(self._on_load_finished)
         main_frame.urlChanged.connect(self._on_url_changed)
-        main_frame.javaScriptWindowObjectCleared.connect(
-            self._on_javascript_window_object_cleared)
+        #main_frame.javaScriptWindowObjectCleared.connect(  #TODO: fix
+        #    self._on_javascript_window_object_cleared)
         self.logger.add_web_page(self.web_page)
 
     def return_result(self, result):
@@ -302,7 +305,7 @@ class BrowserTab(QObject):
             validate_size_str(size)
             w, h = map(int, size.split('x'))
             size = QSize(w, h)
-        self.web_page.setViewportSize(size)
+        # self.web_page.setViewportSize(size)
         self._force_relayout()
         w, h = int(size.width()), int(size.height())
         self.logger.log("viewport size is set to %sx%s" % (w, h), min_level=2)
@@ -317,7 +320,8 @@ class BrowserTab(QObject):
         #
         # The side-effect of this operation is a forced synchronous relayout of
         # the page.
-        self.web_page.setPreferredContentsSize(QSize())
+        # self.web_page.setPreferredContentsSize(QSize())
+        pass
 
     def set_content(self, data, callback, errback, mime_type=None, baseurl=None):
         """
@@ -432,7 +436,7 @@ class BrowserTab(QObject):
         refresh/redirect requests.
         """
         self.logger.log("stop_loading", min_level=2)
-        self.web_view.pageAction(QWebPage.StopScheduledPageRefresh)
+        self.web_view.pageAction(QWebPage.Stop)
         self.web_view.stop()
 
     def register_callback(self, event, callback):
@@ -512,14 +516,14 @@ class BrowserTab(QObject):
                             min_level=1)
 
     def _load_url_to_mainframe(self, url, http_method, body=None, headers=None):
-        request = self.http_client.request_obj(url, headers=headers, body=body)
-        meth = OPERATION_QT_CONSTANTS[http_method]
+        meth = QNetworkRequest.Post if http_method == 'POST' else QNetworkRequest.Get
+        request = self.http_client.request_obj(url, headers=headers, body=body, method=meth)
+        # meth = OPERATION_QT_CONSTANTS[http_method]
         if body is None:  # PyQT doesn't support body=None
-            self.web_page.mainFrame().load(request, meth)
+            self.web_page.load(request)
         else:
             assert isinstance(body, bytes)
-            self.web_page.mainFrame().load(request, meth, body)
-
+            self.web_page.load(request)
     @skip_if_closing
     def _on_content_ready(self, ok, callback, errback, callback_id):
         """
@@ -870,7 +874,11 @@ class BrowserTab(QObject):
         """ Return HTML of the current main frame """
         self.logger.log("getting HTML", min_level=2)
         frame = self.web_page.mainFrame()
-        result = frame.toHtml()
+        result = frame.toHtml(self._to_html)
+        return result
+
+    def _to_html(self, result):
+
         self.store_har_timing("_onHtmlRendered")
         return result
 
@@ -1068,26 +1076,27 @@ class _SplashHttpClient(QObject):
         super(_SplashHttpClient, self).__init__()
         self._replies = set()
         self.web_page = web_page  # type: SplashQWebPage
-        self.network_manager = web_page.networkAccessManager()  # type: SplashQNetworkAccessManager
+        # self.network_manager = web_page.networkAccessManager()  # type: SplashQNetworkAccessManager
 
     def set_user_agent(self, value):
         """ Set User-Agent header for future requests """
         self.web_page.custom_user_agent = value
 
-    def request_obj(self, url, headers=None, body=None):
+    def request_obj(self, url, headers=None, body=None, method=0):
         """ Return a QNetworkRequest object """
         request = QNetworkRequest()
         request.setUrl(to_qurl(url))
-        request.setOriginatingObject(self.web_page.mainFrame())
+        request.setMethod(method)
+        # request.setOriginatingObject(self.web_page.mainFrame())
 
         if headers is not None:
             self.web_page.skip_custom_headers = True
             self._set_request_headers(request, headers)
 
-        if body and not request.hasRawHeader(b"content-type"):
+        if body and not request.hasHeader(b"content-type"):
             # There is POST body but no content-type. QT will set this
             # header, but it will complain so better to do this here.
-            request.setRawHeader(b"content-type",
+            request.setHeader(b"content-type",
                                  b"application/x-www-form-urlencoded")
 
         return request
@@ -1145,7 +1154,7 @@ class _SplashHttpClient(QObject):
         ua_from_headers = _get_header_value(headers, b'user-agent')
         web_page_ua = self.web_page.userAgentForUrl(to_qurl(url))
         user_agent = ua_from_headers or web_page_ua
-        request.setRawHeader(b"user-agent", to_bytes(user_agent))
+        request.setHeader(b"user-agent", to_bytes(user_agent))
 
         if method.upper() == "POST":
             reply = self.network_manager.post(request, body)
@@ -1201,7 +1210,7 @@ class _SplashHttpClient(QObject):
             headers = headers.items()
 
         for name, value in headers or []:
-            request.setRawHeader(to_bytes(name), to_bytes(value))
+            request.setHeader(to_bytes(name), to_bytes(value))
 
     def _delete_reply(self, reply):
         self._replies.remove(reply)
