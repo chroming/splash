@@ -4,7 +4,7 @@ from datetime import datetime
 
 import splash
 from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
-from PyQt5.QtWebKit import qWebKitVersion
+# from PyQt5.QtWebKit import qWebKitVersion
 
 from .utils import get_duration, format_datetime, cleaned_har_entry
 
@@ -84,7 +84,7 @@ class HarLog(object):
     def _get_browser(self):
         return {
             "name": "QWebKit",
-            "version": str(qWebKitVersion()),
+            "version": '0',
             "comment": "PyQt %s, Qt %s" % (PYQT_VERSION_STR, QT_VERSION_STR),
         }
 

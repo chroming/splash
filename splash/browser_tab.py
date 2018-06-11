@@ -4,6 +4,7 @@ import functools
 import os
 import weakref
 import traceback
+import time
 
 from PyQt5.QtCore import (QObject, QSize, Qt, QTimer, pyqtSlot, QEvent,
                           QPointF, QPoint, pyqtSignal)
@@ -115,6 +116,8 @@ class BrowserTab(QObject):
                            render_options)
         self.http_client = _SplashHttpClient(self.web_page)
 
+        self.result = None
+
     def _init_webpage(self, verbosity, network_manager, splash_proxy_factory,
                       render_options):
         """ Create and initialize QWebPage and QWebView """
@@ -216,7 +219,7 @@ class BrowserTab(QObject):
         self.set_js_enabled(True)
         self.set_plugins_enabled(defaults.PLUGINS_ENABLED)
         self.set_response_body_enabled(defaults.RESPONSE_BODY_ENABLED)
-        self.set_indexeddb_enabled(defaults.INDEXEDDB_ENABLED)
+        # self.set_indexeddb_enabled(defaults.INDEXEDDB_ENABLED)
         self.set_webgl_enabled(defaults.WEBGL_ENABLED)
         self.set_html5_media_enabled(defaults.HTML5_MEDIA_ENABLED)
         self.set_media_source_enabled(defaults.MEDIA_SOURCE_ENABLED)
@@ -232,8 +235,8 @@ class BrowserTab(QObject):
 
     def return_result(self, result):
         """ Return a result to the Pool. """
-        if self._result_already_returned():
-            self.logger.log("error: result is already returned", min_level=1)
+        #if self._result_already_returned():
+        #    self.logger.log("error: result is already returned", min_level=1)
 
         self.deferred.callback(result)
         # self.deferred = None
@@ -873,14 +876,29 @@ class BrowserTab(QObject):
     def html(self):
         """ Return HTML of the current main frame """
         self.logger.log("getting HTML", min_level=2)
+        self.result = None
         frame = self.web_page.mainFrame()
-        result = frame.toHtml(self._to_html)
-        return result
+        frame.toHtml(self._to_html)
+        # return self.get_html()
+        while True:
+            time.sleep(3)
+            QApplication.processEvents()
+            if self.result:
+                print("FINISHED")
+                return self.result
+
+    def get_html(self):
+        while True:
+            time.sleep(3)
+            QApplication.processEvents()
+            if self.result:
+                print("FINISHED")
+                return self.result
 
     def _to_html(self, result):
-
+        print(result)
         self.store_har_timing("_onHtmlRendered")
-        return result
+        self.result = result
 
     def _get_image(self, image_format, width, height, render_all,
                    scale_method, region):
