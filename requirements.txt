@@ -1,5 +1,6 @@
 # install PyQt5 (Splash is tested on PyQT 5.9)
 # and the following packages:
+PyQt5 > 5.9
 twisted >= 15.5.0, < 16.3.0
 qt5reactor
 psutil
