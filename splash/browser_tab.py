@@ -7,7 +7,7 @@ import traceback
 import time
 
 from PyQt5.QtCore import (QObject, QSize, Qt, QTimer, pyqtSlot, QEvent,
-                          QPointF, QPoint, pyqtSignal)
+                          QPointF, QPoint, pyqtSignal, QEventLoop)
 from PyQt5.QtGui import QMouseEvent
 #from PyQt5.QtNetwork import QNetworkRequest
 #from PyQt5.QtWebKitWidgets import QWebPage
@@ -235,8 +235,8 @@ class BrowserTab(QObject):
 
     def return_result(self, result):
         """ Return a result to the Pool. """
-        #if self._result_already_returned():
-        #    self.logger.log("error: result is already returned", min_level=1)
+        if self._result_already_returned():
+            self.logger.log("error: result is already returned", min_level=1)
 
         self.deferred.callback(result)
         # self.deferred = None
@@ -460,7 +460,7 @@ class BrowserTab(QObject):
         self._closing = True
         self._closing_normally = True
         self._clear_event_handlers_storage()
-        self.web_view.pageAction(QWebPage.StopScheduledPageRefresh)
+        # self.web_view.pageAction(QWebPage.StopScheduledPageRefresh)
         self.web_view.stop()
         self.web_view.close()
         self.web_page.deleteLater()
@@ -873,32 +873,24 @@ class BrowserTab(QObject):
             return []
         return self._js_console.messages[:]
 
+    to_html_finished_signal = pyqtSignal()
+
     def html(self):
         """ Return HTML of the current main frame """
         self.logger.log("getting HTML", min_level=2)
         self.result = None
         frame = self.web_page.mainFrame()
-        frame.toHtml(self._to_html)
+        frame.toHtml(self._to_html_finished)
         # return self.get_html()
-        while True:
-            time.sleep(3)
-            QApplication.processEvents()
-            if self.result:
-                print("FINISHED")
-                return self.result
+        nloop = QEventLoop()  # need a new loop to run only toHtml event.
+        self.to_html_finished_signal.connect(nloop.quit)
+        nloop.exec()
+        return self.result
 
-    def get_html(self):
-        while True:
-            time.sleep(3)
-            QApplication.processEvents()
-            if self.result:
-                print("FINISHED")
-                return self.result
-
-    def _to_html(self, result):
-        print(result)
+    def _to_html_finished(self, result):
         self.store_har_timing("_onHtmlRendered")
         self.result = result
+        self.to_html_finished_signal.emit()
 
     def _get_image(self, image_format, width, height, render_all,
                    scale_method, region):
