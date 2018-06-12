@@ -89,6 +89,7 @@ class SplashQWebPage(QWebPage):
 
     def on_load_finished(self, ok):
         self.har.store_timing("onLoad")
+        self.har.store_timing("onContentLoad")
 
     def on_layout_completed(self):
         self.har.store_timing("onContentLoad")
@@ -105,7 +106,7 @@ class SplashQWebPage(QWebPage):
     def javaScriptConfirm(self, frame, msg):
         return False
 
-    def javaScriptConsoleMessage(self, msg, line_number, source_id):
+    def javaScriptConsoleMessage(self, level, msg, line_number, source_id):
         if self.verbosity >= 2:
             log.msg("JsConsole(%s:%d): %s" % (source_id, line_number, msg), system='render')
 
