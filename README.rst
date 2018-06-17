@@ -14,6 +14,8 @@ Splash - A javascript rendering service
    :alt: Join the chat at https://gitter.im/scrapinghub/splash
    :target: https://gitter.im/scrapinghub/splash
 
+*ATTENTION: This fork change QWebkit to QWebEngine, but left many details. Use this with care.*
+
 Splash is a javascript rendering service with an HTTP API. It's a lightweight
 browser with an HTTP API, implemented in Python 3 using Twisted and QT5.
 
